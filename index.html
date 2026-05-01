@@ -328,7 +328,9 @@ function fmtDate(d) {
 
 function getApiUrl(){return localStorage.getItem('bmt_api_url')||'';}
 function saveApiUrl(){
-  const el=document.getElementById('api-url-input')||document.getElementById('settings-url');
+  const banner=document.getElementById('setup-banner');
+  const isBannerVisible=banner&&banner.style.display!=='none';
+  const el=isBannerVisible?document.getElementById('api-url-input'):document.getElementById('settings-url');
   const url=(el&&el.value)||'';
   if(!url.trim()){showToast('Please enter a URL');return;}
   localStorage.setItem('bmt_api_url',url.trim());
