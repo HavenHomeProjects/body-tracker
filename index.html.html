@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Body Tracker — Steve & Lavi</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --steve: #6C63FF;
+  --steve-light: #EEEEFF;
+  --lavi: #FF6B9D;
+  --lavi-light: #FFF0F5;
+  --accent1: #00B894;
+  --accent2: #F39C12;
+  --accent3: #E74C3C;
+  --bg: #F8F7FF;
+  --bg2: #FFFFFF;
+  --bg3: #F0EFF8;
+  --text: #1A1A2E;
+  --text2: #6B6B8A;
+  --text3: #A0A0BB;
+  --border: rgba(108,99,255,0.12);
+  --border2: rgba(108,99,255,0.22);
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 2px 12px rgba(108,99,255,0.08);
+  --shadow-lg: 0 4px 24px rgba(108,99,255,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.app { max-width: 720px; margin: 0 auto; padding: 20px 16px 80px; }
+
+/* COLOUR BAR */
+.color-bar { height: 4px; border-radius: 2px; margin-bottom: 22px; background: linear-gradient(90deg, var(--steve), var(--lavi), var(--accent1), var(--accent2)); }
+
+/* HEADER */
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; gap: 12px; flex-wrap: wrap; }
+.header h1 { font-family: 'Syne', sans-serif; font-size: clamp(22px, 5vw, 30px); font-weight: 800; background: linear-gradient(135deg, var(--steve), var(--lavi)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1; margin-bottom: 4px; }
+.header .sub { font-size: 12px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+.unit-toggle { display: flex; background: var(--bg2); border: 1px solid var(--border2); border-radius: 50px; overflow: hidden; padding: 3px; flex-shrink: 0; }
+.unit-btn { padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--text2); border-radius: 50px; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.unit-btn.active { background: var(--steve); color: white; }
+
+/* TABS */
+.tabs { display: flex; gap: 3px; margin-bottom: 22px; background: var(--bg2); border-radius: 50px; padding: 4px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.tab { flex: 1; padding: 9px 6px; font-size: clamp(11px, 2.5vw, 13px); font-weight: 500; cursor: pointer; border: none; background: none; color: var(--text2); border-radius: 50px; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-align: center; white-space: nowrap; }
+.tab.active { background: var(--steve); color: white; box-shadow: 0 2px 10px rgba(108,99,255,0.35); }
+.section { display: none; } .section.active { display: block; }
+
+/* PERSON PILLS */
+.person-pills { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.pill { padding: 7px 18px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border2); border-radius: 50px; background: white; color: var(--text2); transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.pill.steve.active { background: var(--steve); border-color: var(--steve); color: white; box-shadow: 0 3px 12px rgba(108,99,255,0.35); }
+.pill.lavi.active { background: var(--lavi); border-color: var(--lavi); color: white; box-shadow: 0 3px 12px rgba(255,107,157,0.35); }
+.pill:not(.active):hover { background: var(--bg3); color: var(--text); }
+
+/* FORM CARDS */
+.form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.form-card-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--text2); }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 11px; color: var(--text2); font-weight: 500; letter-spacing: 0.02em; }
+.form-group input, .form-group select { height: 40px; padding: 0 12px; font-size: 14px; border: 1.5px solid var(--border2); border-radius: var(--radius); background: var(--bg3); color: var(--text); width: 100%; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--steve); background: white; box-shadow: 0 0 0 3px rgba(108,99,255,0.12); }
+.full-width { grid-column: 1/-1; }
+
+/* BUTTONS */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.btn { height: 42px; padding: 0 22px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border2); border-radius: 50px; background: white; color: var(--text); transition: all 0.2s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+.btn:hover { background: var(--bg3); }
+.btn.primary { background: linear-gradient(135deg, var(--steve), #9B93FF); border-color: transparent; color: white; box-shadow: 0 4px 14px rgba(108,99,255,0.35); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(108,99,255,0.45); }
+.btn.lavi-btn { background: linear-gradient(135deg, var(--lavi), #FF9DC0); border-color: transparent; color: white; box-shadow: 0 4px 14px rgba(255,107,157,0.35); }
+.btn.danger { color: var(--accent3); border-color: rgba(231,76,60,0.25); }
+.btn.danger:hover { background: rgba(231,76,60,0.06); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+/* STAT CARDS */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 12px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--steve), var(--lavi)); }
+.stat-card .lbl { font-size: 11px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-card .val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.stat-card .chg { font-size: 12px; margin-top: 5px; font-weight: 500; }
+.pos { color: var(--accent1); } .neg { color: var(--accent3); } .neu { color: var(--text3); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow); -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+th { text-align: left; padding: 10px 10px; font-size: 10px; font-weight: 600; color: var(--text3); border-bottom: 1px solid var(--border); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.06em; background: var(--bg3); }
+td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text2); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--steve-light); }
+.badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 600; margin-left: 3px; }
+.badge.up { background: rgba(231,76,60,0.12); color: var(--accent3); }
+.badge.dn { background: rgba(0,184,148,0.12); color: var(--accent1); }
+.badge.sm { background: var(--bg3); color: var(--text3); }
+
+/* CHART */
+.chart-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.chart-controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.chart-controls select { height: 36px; padding: 0 12px; font-size: 12px; border: 1.5px solid var(--border2); border-radius: 50px; background: var(--bg3); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+/* CHART STAT CARDS — stacked, easy to read */
+.chart-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.chart-stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; }
+.chart-stat-card .cs-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.chart-stat-card .cs-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.1; }
+.chart-stat-card .cs-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* SETUP BANNER */
+.setup-banner { background: linear-gradient(135deg, var(--steve-light), var(--lavi-light)); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 22px; }
+.setup-banner h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.setup-banner p { font-size: 12px; color: var(--text2); line-height: 1.7; }
+.setup-banner input { margin-top: 12px; height: 40px; padding: 0 12px; font-size: 12px; border: 1.5px solid var(--border2); border-radius: var(--radius); background: white; color: var(--text); width: 100%; font-family: 'DM Sans', sans-serif; }
+
+/* MISC */
+.empty { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 13px; line-height: 1.8; }
+.loading { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--steve), var(--lavi)); color: white; padding: 12px 24px; border-radius: 50px; font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; box-shadow: 0 6px 20px rgba(108,99,255,0.4); }
+.toast.show { opacity: 1; }
+.export-section { margin-bottom: 24px; }
+.export-section h3 { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.settings-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
+.settings-card h3 { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.mono { font-size: 12px; color: var(--text2); padding: 10px 12px; background: var(--bg3); border-radius: var(--radius); font-family: monospace; word-break: break-all; }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-stat-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .full-width { grid-column: 1; }
+}
+@media (max-width: 400px) {
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .chart-stat-grid { grid-template-columns: 1fr; }
+  .tabs .tab { font-size: 10px; padding: 8px 4px; }
+  .unit-btn { padding: 6px 10px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="color-bar"></div>
+
+  <div class="header">
+    <div>
+      <h1>Body Tracker</h1>
+      <div class="sub">Steve &amp; Lavi — Progress Journal</div>
+    </div>
+    <div class="unit-toggle">
+      <button class="unit-btn active" onclick="setUnit('imperial',this)">Imperial</button>
+      <button class="unit-btn" onclick="setUnit('metric',this)">Metric</button>
+    </div>
+  </div>
+
+  <div id="setup-banner" class="setup-banner" style="display:none">
+    <h3>Connect to Google Sheets</h3>
+    <p>Paste your Apps Script Web App URL below.<br>
+    <strong>Extensions → Apps Script → Deploy → Manage deployments → Web app URL</strong></p>
+    <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/YOUR_ID/exec">
+    <div style="margin-top:12px"><button class="btn primary" onclick="saveApiUrl()">Connect</button></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('log',this)">Log</button>
+    <button class="tab" onclick="showTab('history',this)">History</button>
+    <button class="tab" onclick="showTab('charts',this)">Charts</button>
+    <button class="tab" onclick="showTab('export',this)">Export</button>
+    <button class="tab" onclick="showTab('settings',this)">Settings</button>
+  </div>
+
+  <!-- LOG -->
+  <div class="section active" id="sec-log">
+    <div class="person-pills">
+      <button class="pill steve active" id="lp-Steve" onclick="selectPerson('log','Steve',this)">Steve</button>
+      <button class="pill lavi" id="lp-Lavi" onclick="selectPerson('log','Lavi',this)">Lavi</button>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title"><span class="dot" style="background:var(--accent2)"></span>Basic info</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="inp-date">
+        </div>
+        <div class="form-group">
+          <label>Weight (<span class="uw">lbs</span>)</label>
+          <input type="number" id="inp-Weight" step="0.1" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title"><span class="dot" style="background:var(--steve)"></span>Upper body</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Neck (<span class="ul">in</span>)</label><input type="number" id="inp-Neck" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>Chest (<span class="ul">in</span>)</label><input type="number" id="inp-Chest" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>Bicep Left (<span class="ul">in</span>)</label><input type="number" id="inp-BicepL" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>Bicep Right (<span class="ul">in</span>)</label><input type="number" id="inp-BicepR" step="0.1" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title"><span class="dot" style="background:var(--lavi)"></span>Core</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Waist / Naval (<span class="ul">in</span>)</label><input type="number" id="inp-Waist" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>High Hip (<span class="ul">in</span>)</label><input type="number" id="inp-HighHip" step="0.1" placeholder="0"></div>
+        <div class="form-group full-width"><label>Hip / Seat (<span class="ul">in</span>)</label><input type="number" id="inp-Hip" step="0.1" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title"><span class="dot" style="background:var(--accent1)"></span>Lower body</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Calf Left (<span class="ul">in</span>)</label><input type="number" id="inp-CalfL" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label>Calf Right (<span class="ul">in</span>)</label><input type="number" id="inp-CalfR" step="0.1" placeholder="0"></div>
+        <div class="form-group full-width"><label>Notes</label><input type="text" id="inp-Notes" placeholder="e.g. morning measurement, after workout"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="save-btn" onclick="saveEntry()">Save entry</button>
+      <button class="btn" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="sec-history">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <div class="person-pills" style="margin-bottom:0">
+        <button class="pill steve active" id="hp-Steve" onclick="selectPerson('hist','Steve',this)">Steve</button>
+        <button class="pill lavi" id="hp-Lavi" onclick="selectPerson('hist','Lavi',this)">Lavi</button>
+      </div>
+      <button class="btn danger" style="margin-left:auto" onclick="clearPersonData()">Clear data</button>
+    </div>
+    <div class="stat-grid" id="stat-grid"></div>
+    <div id="history-wrap"></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section" id="sec-charts">
+    <div class="chart-controls">
+      <div class="person-pills" style="margin-bottom:0">
+        <button class="pill steve active" id="cp-Steve" onclick="selectPerson('chart','Steve',this)">Steve</button>
+        <button class="pill lavi" id="cp-Lavi" onclick="selectPerson('chart','Lavi',this)">Lavi</button>
+      </div>
+      <select id="chart-measure" onchange="renderChart()">
+        <option value="Weight">Weight</option>
+        <option value="Waist">Waist</option>
+        <option value="Chest">Chest</option>
+        <option value="Neck">Neck</option>
+        <option value="HighHip">High hip</option>
+        <option value="Hip">Hip</option>
+        <option value="BicepL">Bicep left</option>
+        <option value="BicepR">Bicep right</option>
+        <option value="CalfL">Calf left</option>
+        <option value="CalfR">Calf right</option>
+      </select>
+    </div>
+    <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
+    <div id="chart-stats"></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="section" id="sec-export">
+    <div class="export-section">
+      <h3>Export CSV</h3>
+      <div class="btn-row">
+        <button class="btn primary" onclick="exportCSV('Steve')">Steve</button>
+        <button class="btn lavi-btn" onclick="exportCSV('Lavi')">Lavi</button>
+        <button class="btn" onclick="exportCSV('all')">Both</button>
+      </div>
+    </div>
+    <div class="export-section">
+      <h3>Google Sheets</h3>
+      <div class="btn-row">
+        <button class="btn" onclick="openSheet()">Open Sheet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section" id="sec-settings">
+    <div class="settings-card">
+      <h3>Apps Script URL</h3>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Google Apps Script Web App URL</label>
+        <input type="text" id="settings-url" placeholder="https://script.google.com/macros/s/.../exec" style="height:40px;padding:0 12px;font-size:13px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);width:100%">
+      </div>
+      <button class="btn primary" onclick="saveApiUrl()">Save</button>
+    </div>
+    <div class="settings-card">
+      <h3>Sheet ID</h3>
+      <div class="mono">1OvmdUjl4LSeKeWVhQOtE8RYa0gqGxf-0rZLX15Nm1qY</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEET_URL='https://docs.google.com/spreadsheets/d/1OvmdUjl4LSeKeWVhQOtE8RYa0gqGxf-0rZLX15Nm1qY/edit';
+const FIELDS=['Weight','Neck','Chest','BicepL','BicepR','Waist','HighHip','Hip','CalfL','CalfR'];
+const LABELS={Weight:'Weight',Neck:'Neck',Chest:'Chest',BicepL:'Bicep L',BicepR:'Bicep R',Waist:'Waist',HighHip:'High hip',Hip:'Hip',CalfL:'Calf L',CalfR:'Calf R'};
+const PEOPLE=['Steve','Lavi'];
+let unit='imperial',logPerson='Steve',histPerson='Steve',chartPerson='Steve',chartInstance=null,cache={Steve:null,Lavi:null};
+
+function fmtDate(d) {
+  if (!d) return '-';
+  const s = String(d).trim();
+  // Handle YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y,m,day] = s.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
+  }
+  // Handle other formats by parsing
+  try {
+    const dt = new Date(s);
+    if (!isNaN(dt)) {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+    }
+  } catch(e) {}
+  return s;
+}
+
+function getApiUrl(){return localStorage.getItem('bmt_api_url')||'';}
+function saveApiUrl(){
+  const el=document.getElementById('api-url-input')||document.getElementById('settings-url');
+  const url=(el&&el.value)||'';
+  if(!url.trim()){showToast('Please enter a URL');return;}
+  localStorage.setItem('bmt_api_url',url.trim());
+  document.getElementById('setup-banner').style.display='none';
+  const si=document.getElementById('settings-url');if(si)si.value=url.trim();
+  cache={Steve:null,Lavi:null};showToast('Connected!');renderHistory();renderChart();
+}
+function checkSetup(){
+  const url=getApiUrl();
+  document.getElementById('setup-banner').style.display=url?'none':'block';
+  const si=document.getElementById('settings-url');if(si&&url)si.value=url;
+  return!!url;
+}
+async function apiFetch(params){
+  const url=getApiUrl();if(!url){showToast('Set up API URL first');return null;}
+  const res=await fetch(url+'?'+new URLSearchParams(params).toString());return res.json();
+}
+async function apiPost(body){
+  const url=getApiUrl();if(!url){showToast('Set up API URL first');return null;}
+  const res=await fetch(url,{method:'POST',body:JSON.stringify(body)});return res.json();
+}
+async function loadData(person){
+  if(cache[person])return cache[person];
+  if(!checkSetup())return[];
+  try{const r=await apiFetch({action:'get',person});if(r&&r.success){cache[person]=r.data||[];return cache[person];}}catch(e){}
+  return[];
+}
+function setUnit(u,btn){
+  unit=u;
+  document.querySelectorAll('.uw').forEach(el=>el.textContent=u==='imperial'?'lbs':'kg');
+  document.querySelectorAll('.ul').forEach(el=>el.textContent=u==='imperial'?'in':'cm');
+  document.querySelectorAll('.unit-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderHistory();renderChart();
+}
+function showTab(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');document.getElementById('sec-'+t).classList.add('active');
+  if(t==='history')renderHistory();if(t==='charts')renderChart();
+}
+function selectPerson(ctx,p,btn){
+  if(ctx==='log')logPerson=p;
+  else if(ctx==='hist')histPerson=p;
+  else if(ctx==='chart')chartPerson=p;
+  const prefix=ctx==='log'?'lp-':ctx==='hist'?'hp-':'cp-';
+  PEOPLE.forEach(n=>{const el=document.getElementById(prefix+n);if(el)el.classList.remove('active');});
+  btn.classList.add('active');
+  if(ctx==='hist')renderHistory();if(ctx==='chart')renderChart();
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function convert(val,field,fromU,toU){
+  if(val==null||isNaN(val))return val;if(fromU===toU)return val;
+  if(field==='Weight')return fromU==='imperial'?+(val*0.453592).toFixed(1):+(val*2.20462).toFixed(1);
+  return fromU==='imperial'?+(val*2.54).toFixed(1):+(val/2.54).toFixed(1);
+}
+function dv(entry,field){
+  if(entry[field]==null||entry[field]==='')return'-';
+  const v=convert(parseFloat(entry[field]),field,entry.Unit||'imperial',unit);
+  return v!=null?v:'-';
+}
+function pct(a,b){if(!a||!b||a===0)return null;return(((b-a)/a)*100).toFixed(1);}
+
+async function saveEntry(){
+  if(!checkSetup())return;
+  const date=document.getElementById('inp-date').value;
+  if(!date){showToast('Please select a date');return;}
+  const entry={Person:logPerson,Date:date,Unit:unit,Notes:document.getElementById('inp-Notes').value};
+  let hasVal=false;
+  FIELDS.forEach(f=>{const v=parseFloat(document.getElementById('inp-'+f).value);if(!isNaN(v)&&v>0){entry[f]=v;hasVal=true;}});
+  if(!hasVal){showToast('Enter at least one measurement');return;}
+  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const r=await apiPost({action:'save',entry});
+    if(r&&r.success){cache[logPerson]=null;showToast('Saved!');clearForm();}
+    else showToast('Save failed — check API URL');
+  }catch(e){showToast('Network error');}
+  btn.disabled=false;btn.textContent='Save entry';
+}
+function clearForm(){FIELDS.forEach(f=>document.getElementById('inp-'+f).value='');document.getElementById('inp-Notes').value='';}
+
+async function renderHistory(){
+  if(!checkSetup())return;
+  const sg=document.getElementById('stat-grid'),hw=document.getElementById('history-wrap');
+  sg.innerHTML='<div class="loading">Loading...</div>';hw.innerHTML='';
+  const data=await loadData(histPerson);
+  if(data.length===0){sg.innerHTML='';hw.innerHTML='<div class="empty">No entries yet for '+histPerson+'.<br>Log a measurement to get started.</div>';return;}
+  const sorted=[...data].sort((a,b)=>String(a.Date).localeCompare(String(b.Date)));
+  const last=sorted[sorted.length-1],prev=sorted.length>1?sorted[sorted.length-2]:null;
+  sg.innerHTML=['Weight','Waist','Hip','Chest'].map(f=>{
+    const cur=dv(last,f),pre=prev?dv(prev,f):null;
+    const chg=pre&&pre!=='-'&&cur!=='-'?pct(parseFloat(pre),parseFloat(cur)):null;
+    const chgHtml=chg!==null?`<div class="chg ${parseFloat(chg)>0?'neg':parseFloat(chg)<0?'pos':'neu'}">${parseFloat(chg)>0?'+':''}${chg}% vs prev</div>`:'';
+    return`<div class="stat-card"><div class="lbl">${LABELS[f]}</div><div class="val">${cur!=='-'?cur:'--'}</div>${chgHtml}</div>`;
+  }).join('');
+  const rows=[...sorted].reverse().map((entry,i,arr)=>{
+    const p=i<arr.length-1?arr[i+1]:null;
+    const cells=FIELDS.map(f=>{
+      const cur=dv(entry,f);if(cur==='-')return`<td style="color:var(--text3)">—</td>`;
+      const pre=p?dv(p,f):null;
+      const chg=pre&&pre!=='-'?pct(parseFloat(pre),parseFloat(cur)):null;
+      const badge=chg!==null?` <span class="badge ${parseFloat(chg)>0?'up':parseFloat(chg)<0?'dn':'sm'}">${parseFloat(chg)>0?'+':''}${chg}%</span>`:'';
+      return`<td>${cur}${badge}</td>`;
+    }).join('');
+    return`<tr><td style="white-space:nowrap;font-size:12px;color:var(--text2);font-weight:500">${fmtDate(entry.Date)}</td>${cells}<td style="font-size:11px;color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis">${entry.Notes||''}</td></tr>`;
+  }).join('');
+  const headers=['Date',...FIELDS.map(f=>LABELS[f]),'Notes'].map(h=>`<th>${h}</th>`).join('');
+  hw.innerHTML=`<div class="table-wrap"><table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+async function renderChart(){
+  if(!checkSetup())return;
+  const measure=document.getElementById('chart-measure').value;
+  const canvas=document.getElementById('main-chart'),statsDiv=document.getElementById('chart-stats');
+  statsDiv.innerHTML='<div class="loading">Loading...</div>';
+  const data=await loadData(chartPerson);
+  const sorted=[...data].sort((a,b)=>String(a.Date).localeCompare(String(b.Date)));
+  const filtered=sorted.filter(e=>e[measure]!=null&&e[measure]!=='');
+  if(filtered.length===0){if(chartInstance){chartInstance.destroy();chartInstance=null;}statsDiv.innerHTML='<div class="empty">No data for this measurement yet.</div>';return;}
+  const labels=filtered.map(e=>fmtDate(e.Date));
+  const values=filtered.map(e=>parseFloat(dv(e,measure)));
+  const isWeight=measure==='Weight';
+  const unitLabel=isWeight?(unit==='imperial'?'lbs':'kg'):(unit==='imperial'?'in':'cm');
+  if(chartInstance)chartInstance.destroy();
+  const isSteve=chartPerson==='Steve';
+  const lineColor=isSteve?'rgba(108,99,255,1)':'rgba(255,107,157,1)';
+  const fillColor=isSteve?'rgba(108,99,255,0.08)':'rgba(255,107,157,0.08)';
+  Chart.defaults.color='#A0A0BB';
+  chartInstance=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets:[{label:(LABELS[measure]||measure)+' ('+unitLabel+')',data:values,borderColor:lineColor,backgroundColor:fillColor,fill:true,tension:0.35,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:lineColor,pointBorderColor:'white',pointBorderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(26,26,46,0.92)',borderColor:lineColor,borderWidth:1,padding:10,callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)} ${unitLabel}`}}},scales:{x:{ticks:{font:{size:11},color:'#A0A0BB',maxRotation:45},grid:{color:'rgba(108,99,255,0.06)',drawBorder:false}},y:{ticks:{font:{size:11},color:'#A0A0BB',callback:v=>v.toFixed(1)},grid:{color:'rgba(108,99,255,0.06)',drawBorder:false}}}}
+  });
+  const max=Math.max(...values),min=Math.min(...values),first=values[0],last=values[values.length-1];
+  const totalChg=pct(first,last),maxChg=pct(max,last);
+  const totalChgF=parseFloat(totalChg),maxChgF=parseFloat(maxChg);
+  const diff=(last-first).toFixed(1);
+  statsDiv.innerHTML=`<div class="chart-stat-grid">
+    <div class="chart-stat-card">
+      <div class="cs-label">Current</div>
+      <div class="cs-value" style="color:${isSteve?'var(--steve)':'var(--lavi)'}">${last.toFixed(1)} <span style="font-size:14px;font-weight:400;color:var(--text3)">${unitLabel}</span></div>
+      <div class="cs-sub">Latest recorded value</div>
+    </div>
+    <div class="chart-stat-card">
+      <div class="cs-label">Change from first entry</div>
+      <div class="cs-value ${totalChgF>0?'neg':totalChgF<0?'pos':'neu'}">${totalChgF>0?'+':''}${totalChg}%</div>
+      <div class="cs-sub">${diff} ${unitLabel} ${totalChgF<0?'lost':'gained'} overall</div>
+    </div>
+    <div class="chart-stat-card">
+      <div class="cs-label">Peak value</div>
+      <div class="cs-value" style="color:var(--accent2)">${max.toFixed(1)} <span style="font-size:14px;font-weight:400;color:var(--text3)">${unitLabel}</span></div>
+      <div class="cs-sub">Highest recorded</div>
+    </div>
+    <div class="chart-stat-card">
+      <div class="cs-label">Down from peak</div>
+      <div class="cs-value ${maxChgF<0?'pos':maxChgF>0?'neg':'neu'}">${maxChgF>0?'+':''}${maxChg}%</div>
+      <div class="cs-sub">${Math.abs(max-last).toFixed(1)} ${unitLabel} ${maxChgF<0?'below':'above'} peak</div>
+    </div>
+  </div>`;
+}
+
+async function exportCSV(who){
+  const people=who==='all'?PEOPLE:[who];let csv='Person,Date,Unit,'+FIELDS.join(',')+',Notes\n';
+  for(const p of people){const data=await loadData(p);const sorted=[...data].sort((a,b)=>String(a.Date).localeCompare(String(b.Date)));sorted.forEach(e=>{csv+=[p,e.Date,e.Unit||'imperial',...FIELDS.map(f=>e[f]!=null?e[f]:''),e.Notes||''].join(',')+'\n';});}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='body_measurements.csv';a.click();
+}
+function openSheet(){window.open(SHEET_URL,'_blank');}
+async function clearPersonData(){
+  if(!confirm('Delete ALL entries for '+histPerson+'?'))return;
+  const r=await apiPost({action:'delete',person:histPerson});
+  if(r&&r.success){cache[histPerson]=null;renderHistory();showToast('Cleared');}
+  else showToast('Error — check connection');
+}
+document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
+checkSetup();
+</script>
+</body>
+</html>
