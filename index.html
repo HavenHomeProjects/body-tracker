@@ -419,10 +419,11 @@ async function renderHistory(){
   if(data.length===0){sg.innerHTML='';hw.innerHTML='<div class="empty">No entries yet for '+histPerson+'.<br>Log a measurement to get started.</div>';return;}
   const sorted=[...data].sort((a,b)=>String(a.Date).localeCompare(String(b.Date)));
   const last=sorted[sorted.length-1],prev=sorted.length>1?sorted[sorted.length-2]:null;
-  sg.innerHTML=['Weight','Waist','Hip','Chest'].map(f=>{
+  sg.style.gridTemplateColumns='repeat(auto-fill, minmax(130px, 1fr))';
+  sg.innerHTML=FIELDS.map(f=>{
     const cur=dv(last,f),pre=prev?dv(prev,f):null;
     const chg=pre&&pre!=='-'&&cur!=='-'?pct(parseFloat(pre),parseFloat(cur)):null;
-    const chgHtml=chg!==null?`<div class="chg ${parseFloat(chg)>0?'neg':parseFloat(chg)<0?'pos':'neu'}">${parseFloat(chg)>0?'+':''}${chg}% vs prev</div>`:'';
+    const chgHtml=chg!==null?`<div class="chg ${parseFloat(chg)>0?'neg':parseFloat(chg)<0?'pos':'neu'}">${parseFloat(chg)>0?'+':''}${chg}% vs prev</div>`:'<div class="chg neu">—</div>';
     return`<div class="stat-card"><div class="lbl">${LABELS[f]}</div><div class="val">${cur!=='-'?cur:'--'}</div>${chgHtml}</div>`;
   }).join('');
   const rows=[...sorted].reverse().map((entry,i,arr)=>{
@@ -463,20 +464,25 @@ async function renderChart(){
     data:{labels,datasets:[{label:(LABELS[measure]||measure)+' ('+unitLabel+')',data:values,borderColor:lineColor,backgroundColor:fillColor,fill:true,tension:0.35,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:lineColor,pointBorderColor:'white',pointBorderWidth:2}]},
     options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(26,26,46,0.92)',borderColor:lineColor,borderWidth:1,padding:10,callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)} ${unitLabel}`}}},scales:{x:{ticks:{font:{size:11},color:'#A0A0BB',maxRotation:45},grid:{color:'rgba(108,99,255,0.06)',drawBorder:false}},y:{ticks:{font:{size:11},color:'#A0A0BB',callback:v=>v.toFixed(1)},grid:{color:'rgba(108,99,255,0.06)',drawBorder:false}}}}
   });
-  const max=Math.max(...values),min=Math.min(...values),first=values[0],last=values[values.length-1];
-  const totalChg=pct(first,last),maxChg=pct(max,last);
-  const totalChgF=parseFloat(totalChg),maxChgF=parseFloat(maxChg);
-  const diff=(last-first).toFixed(1);
-  statsDiv.innerHTML=`<div class="chart-stat-grid">
+  const max=Math.max(...values),first=values[0],prev=values.length>1?values[values.length-2]:values[0],last=values[values.length-1];
+  const prevChg=pct(prev,last),firstChg=pct(first,last),maxChg=pct(max,last);
+  const prevChgF=parseFloat(prevChg),firstChgF=parseFloat(firstChg),maxChgF=parseFloat(maxChg);
+  
+  statsDiv.innerHTML=`<div class="chart-stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
     <div class="chart-stat-card">
       <div class="cs-label">Current</div>
       <div class="cs-value" style="color:${isSteve?'var(--steve)':'var(--lavi)'}">${last.toFixed(1)} <span style="font-size:14px;font-weight:400;color:var(--text3)">${unitLabel}</span></div>
       <div class="cs-sub">Latest recorded value</div>
     </div>
     <div class="chart-stat-card">
-      <div class="cs-label">Change from first entry</div>
-      <div class="cs-value ${totalChgF>0?'neg':totalChgF<0?'pos':'neu'}">${totalChgF>0?'+':''}${totalChg}%</div>
-      <div class="cs-sub">${diff} ${unitLabel} ${totalChgF<0?'lost':'gained'} overall</div>
+      <div class="cs-label">vs Previous entry</div>
+      <div class="cs-value ${prevChgF>0?'neg':prevChgF<0?'pos':'neu'}">${prevChgF>0?'+':''}${prevChg}%</div>
+      <div class="cs-sub">${Math.abs(last-prev).toFixed(1)} ${unitLabel} ${prevChgF<0?'lost':'gained'}</div>
+    </div>
+    <div class="chart-stat-card">
+      <div class="cs-label">vs First entry</div>
+      <div class="cs-value ${firstChgF>0?'neg':firstChgF<0?'pos':'neu'}">${firstChgF>0?'+':''}${firstChg}%</div>
+      <div class="cs-sub">${Math.abs(last-first).toFixed(1)} ${unitLabel} ${firstChgF<0?'lost':'gained'} overall</div>
     </div>
     <div class="chart-stat-card">
       <div class="cs-label">Peak value</div>
@@ -484,7 +490,7 @@ async function renderChart(){
       <div class="cs-sub">Highest recorded</div>
     </div>
     <div class="chart-stat-card">
-      <div class="cs-label">Down from peak</div>
+      <div class="cs-label">vs Peak</div>
       <div class="cs-value ${maxChgF<0?'pos':maxChgF>0?'neg':'neu'}">${maxChgF>0?'+':''}${maxChg}%</div>
       <div class="cs-sub">${Math.abs(max-last).toFixed(1)} ${unitLabel} ${maxChgF<0?'below':'above'} peak</div>
     </div>
