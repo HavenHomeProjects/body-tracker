@@ -87,7 +87,6 @@ body {
 .btn:active { transform: scale(0.98); }
 .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .btn.lavi-btn { background: var(--lavi); border-color: var(--lavi); color: white; }
-.btn.danger { color: var(--bad); border-color: rgba(210,105,111,0.3); flex: none; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* STAT CARDS */
@@ -234,7 +233,6 @@ tr:last-child td { border-bottom: none; }
         <button class="pill steve active" id="hp-Steve" onclick="selectPerson('hist','Steve',this)">Steve</button>
         <button class="pill lavi" id="hp-Lavi" onclick="selectPerson('hist','Lavi',this)">Lavi</button>
       </div>
-      <button class="btn danger" style="margin-left:auto" onclick="clearPersonData()">Clear data</button>
     </div>
     <div class="stat-grid" id="stat-grid"></div>
     <div id="history-wrap"></div>
@@ -508,12 +506,6 @@ async function exportCSV(who){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='body_measurements.csv';a.click();
 }
 function openSheet(){window.open(SHEET_URL,'_blank');}
-async function clearPersonData(){
-  if(!confirm('Delete ALL entries for '+histPerson+'?'))return;
-  const r=await apiPost({action:'delete',person:histPerson});
-  if(r&&r.success){cache[histPerson]=null;renderHistory();showToast('Cleared');}
-  else showToast('Error — check connection');
-}
 document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
 checkSetup();
 </script>
